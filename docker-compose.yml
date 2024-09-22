@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  back:
+    build:
+      dockerfile: back/Dockerfile
+      context: back
+    ports:
+      - '8066:8066'
