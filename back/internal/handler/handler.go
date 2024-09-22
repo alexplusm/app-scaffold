@@ -1,36 +1,46 @@
 package handler
 
 import (
-	"context"
+	"app/internal/db"
+	"app/internal/model"
+	"net/http"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 )
 
 type handler struct {
-	conn *pgx.Conn
+	conn *db.ConnectionDB
 }
 
-func NewHandler(connDB *pgx.Conn) *handler {
+func NewHandler(connDB *db.ConnectionDB) *handler {
 	return &handler{
 		conn: connDB,
 	}
 }
 
 func (h *handler) Hello(c echo.Context) error {
-	return c.String(200, "hello")
+	return c.String(http.StatusOK, "hello")
 }
 
 func (h *handler) Test(c echo.Context) error {
-	var res string
-	err := h.conn.QueryRow(context.Background(), "SELECT name FROM test LIMIT 1;").Scan(&res)
-
-	if err != nil && !(err.Error() == pgx.ErrNoRows.Error()) {
-		return err
+	res, err := h.conn.GetTestName()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	return c.String(200, res)
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *handler) CreateTest(c echo.Context) error {
+	data := &model.TestData{}
+	if err := c.Bind(data); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	if err := h.conn.NewTestName(data.Name); err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, "OK")
 }
 
 func (h *handler) Close() error {
-	return h.conn.Close(context.Background())
+	return h.conn.Close()
 }

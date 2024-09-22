@@ -24,6 +24,7 @@ func main() {
 
 	e.GET("/hello", handler.Hello)
 	e.GET("/test", handler.Test)
+	e.POST("/test", handler.CreateTest)
 
 	e.Logger.Fatal(e.Start(":8066"))
 }
